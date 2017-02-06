@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>three.js webgl - buffergeometry [particles]</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            color: #cccccc;
+            font-family:Monospace;
+            font-size:13px;
+            text-align:center;
+            background-color: #050505;
+            margin: 0px;
+            overflow: hidden;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="container"></div>
+<div id="info"><a href="http://threejs.org" target="_blank">three.js</a> webgl - buffergeometry - particles</div>
+
+<script src="three.js"></script>
+
+
+<script id="test-vs" type="x-shader/x-vertex">
+
+
+            varying vec4 vColor;
+
+            uniform float hMin;
+            uniform float hRange;
+            uniform float pointSize;
+            uniform sampler2D testtexture;
+			void main()	{
+
+
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+				gl_PointSize =pointSize;
+
+
+
+                 vec2 uv=vec2((position.x-hMin)/hRange,(position.y-hMin)/hRange);
+                    vColor= texture2D(testtexture,uv);
+			}
+		</script>
+
+<script id="test-fs" type="x-shader/x-fragment">
+
+            varying vec4 vColor;
+			void main()	{
+				gl_FragColor =vColor;
+			}
+</script>
+<!--vec2 uv=vec2((position.y-hMin)/hRange,0.5);-->
+<!--vColor= texture2D(texture,uv);-->
+<script>
+
+    var container, stats;
+    var camera, scene, renderer;
+    var points;
+    var textureLoader=new THREE.TextureLoader();
+    var uniforms={
+        hMin:{ value: -500.0 },
+        hRange:{value:1000.0},
+        pointSize:{value:1.0},
+        testtexture:{value:textureLoader.load( "test.png" ) }
+    };
+    init();
+    animate();
+    function init() {
+        container = document.getElementById( 'container' );
+        //
+        camera = new THREE.PerspectiveCamera( 27, window.innerWidth / window.innerHeight, 5, 3500 );
+        camera.position.z = 2750;
+        scene = new THREE.Scene();
+        scene.fog = new THREE.Fog( 0x050505, 2000, 3500 );
+        //
+        var particles = 500000;
+        var geometry = new THREE.BufferGeometry();
+        var positions = new Float32Array( particles * 3 );
+
+        var n = 1000, n2 = n / 2; // particles spread in the cube
+        for ( var i = 0; i < positions.length; i += 3 ) {
+            // positions
+            var x = Math.random() * n - n2;
+            var y = Math.random() * n - n2;
+            var z = Math.random() * n - n2;
+            positions[ i ]     = x;
+            positions[ i + 1 ] = y;
+            positions[ i + 2 ] = z;
+
+        }
+        geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+
+        geometry.computeBoundingSphere();
+        //
+
+
+
+        var material = new THREE.ShaderMaterial( {
+            uniforms: uniforms,
+            vertexShader: document.getElementById( 'test-vs' ).textContent,
+            fragmentShader: document.getElementById( 'test-fs' ).textContent
+        } );
+
+
+
+//        var material = new THREE.PointsMaterial( { size: 15, vertexColors: THREE.VertexColors } );
+        points = new THREE.Points( geometry, material );
+        scene.add( points );
+
+        renderer = new THREE.WebGLRenderer( { antialias: false } );
+        renderer.setClearColor( scene.fog.color );
+        renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        container.appendChild( renderer.domElement );
+
+
+
+        window.addEventListener( 'resize', onWindowResize, false );
+    }
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+    }
+    //
+    function animate() {
+        requestAnimationFrame( animate );
+        render();
+
+    }
+    function render() {
+        points.rotation.x+=0.01;
+        points.rotation.y+=0.01;
+        points.rotation.z+=0.01;
+        renderer.render( scene, camera );
+    }
+</script>
+
+</body>
+</html>
